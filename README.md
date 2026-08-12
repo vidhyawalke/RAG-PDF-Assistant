@@ -96,8 +96,8 @@ To run the project on your local machine, follow these steps:
    ```
 
 4. Start the application:
-   * Streamlit Frontend: `streamlit run frontend/app.py` (open http://localhost:8501)
-   * FastAPI Backend API: `uvicorn backend.main:app --port 8000 --reload` (open http://localhost:8000/docs)
+   * Streamlit Frontend: `streamlit run frontend/app.py --server.port 8000` (open http://localhost:8000)
+   * FastAPI Backend API: `uvicorn backend.main:app --port 8001 --reload` (open http://localhost:8001/docs)
    * Docker Compose: `docker-compose up --build`
 
 ## Video
