@@ -1,9 +1,10 @@
 services:
   - type: web
     name: rag-pdf-assistant
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: streamlit run frontend/app.py --server.port $PORT --server.address 0.0.0.0
+    env: docker
+    plan: free
     envVars:
+      - key: PORT
+        value: "8501"
       - key: GOOGLE_API_KEY
         sync: false

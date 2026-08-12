@@ -24,8 +24,9 @@ RUN mkdir -p /var/log/supervisor
 # Copy supervisor configuration for proper process management
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Expose ports for FastAPI (8000) and Streamlit (8501)
-EXPOSE 8000 8501
+# Expose ports for Streamlit UI (8501) as primary, and FastAPI (8000)
+EXPOSE 8501
+EXPOSE 8000
 
 # Use supervisor to manage both FastAPI and Streamlit processes
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
