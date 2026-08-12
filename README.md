@@ -23,7 +23,6 @@ Here is what you can do with RAG PDF Assistant:
 * Context-Grounded Answers: Sends retrieved text chunks to Google Gemini API (`gemini-1.5-flash`) with instructions to answer based only on the uploaded document.
 * Expandable Source Citations: Each answer includes a drawer showing the exact source page numbers and matching text snippets.
 * Clean Web Interface: Streamlit chat UI with timing badges, dark mode support, and session clearing.
-* Automated Evaluation Suite: Benchmark retrieval precision and latency by running `python -m backend.eval.evaluate`.
 
 ## The Process
 
@@ -34,8 +33,6 @@ Next, I worked on vector indexing and retrieval. I used SentenceTransformers (`a
 After setup, I integrated the Google Gemini API (`gemini-1.5-flash`). I wrote a system prompt that tells the model to answer strictly using the provided context and cite the exact page numbers used.
 
 To connect everything together, I built a FastAPI backend with `/upload`, `/ask`, and `/health` endpoints with input validation and file path security checks. Then I built the Streamlit frontend with file upload buttons, chat boxes, and expandable source drawers.
-
-Finally, I wrote an evaluation script (`evaluate.py`) that runs test questions against a sample PDF, checks keyword precision scores, measures latency, and exports JSON reports.
 
 ## What I Learned
 
@@ -52,9 +49,6 @@ Writing the prompt template taught me how to keep LLMs focused. Explicitly telli
 
 ### API Architecture and Containerization
 Building FastAPI routes with Pydantic models gave me practice with request validation, safe file handling, and Docker container setup with Supervisor.
-
-### Benchmarking and Evaluation
-Building `evaluate.py` showed me how to measure system accuracy automatically instead of relying on manual testing.
 
 ## How can it be improved?
 
