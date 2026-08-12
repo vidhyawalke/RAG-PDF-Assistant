@@ -1,6 +1,8 @@
 # RAG PDF Assistant — AI Document Q&A Engine
 
-![RAG PDF Assistant Banner](assets/banner.png)
+<p align="center">
+  <img src="assets/banner.png" width="100%" alt="RAG PDF Assistant Banner" />
+</p>
 
 A Retrieval-Augmented Generation (RAG) system built with **FastAPI**, **Streamlit**, **FAISS**, and **Google Gemini API**. It processes any uploaded PDF document, indexes text passages into dense vector embeddings, and provides accurate, grounded answers with exact page citations and execution latency metrics.
 
