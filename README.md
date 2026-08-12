@@ -1,99 +1,91 @@
-# RAG PDF Assistant
+# RAG PDF Assistant — AI Document Q&A Engine
 
-A Retrieval-Augmented Generation (RAG) system built with FastAPI, Streamlit, FAISS, and Google Gemini API. It lets users upload PDF documents, ask questions about the contents, and get back answers with exact page citations and response timings.
+![RAG PDF Assistant Banner](assets/banner.png)
 
-## Technologies
+A Retrieval-Augmented Generation (RAG) system built with **FastAPI**, **Streamlit**, **FAISS**, and **Google Gemini API**. It processes any uploaded PDF document, indexes text passages into dense vector embeddings, and provides accurate, grounded answers with exact page citations and execution latency metrics.
 
-* FastAPI: Backend API framework
-* Streamlit: Interactive chat frontend
-* Python 3.8+: Core language
-* FAISS: Vector similarity search index
-* SentenceTransformers: `all-MiniLM-L6-v2` dense text embeddings
-* Google Gemini API: `gemini-1.5-flash` model for answering
-* PyPDF: Extracting text from PDF pages
-* Scikit-Learn: Cosine similarity fallback retriever
-* Docker & Docker Compose: Containerization setup
+---
 
-## Features
+## Tech Stack
 
-Here is what you can do with RAG PDF Assistant:
+| Layer | Technology |
+|---|---|
+| **Frontend** | Streamlit UI |
+| **Backend** | FastAPI (Python 3.10) |
+| **AI Engine** | Google Gemini API (`gemini-3.6-flash`, `gemini-3.5-flash`) |
+| **Embeddings** | SentenceTransformers (`all-MiniLM-L6-v2`) / TF-IDF Fallback |
+| **Vector DB** | FAISS (`IndexFlatIP` normalized cosine search) |
+| **PDF Extraction** | PyPDF |
+| **Container & Deployment** | Docker, Supervisor, Docker Compose & Render |
 
-* Upload PDF Documents: Drag and drop a PDF file. The app reads page text, tracks page numbers, and splits text into chunks of 1000 characters with 150 character overlap.
-* Fast Vector Search: Converts text chunks into 384-dimensional dense vectors stored in a FAISS index for quick context retrieval.
-* Context-Grounded Answers: Sends retrieved text chunks to Google Gemini API (`gemini-1.5-flash`) with instructions to answer based only on the uploaded document.
-* Expandable Source Citations: Each answer includes a drawer showing the exact source page numbers and matching text snippets.
-* Clean Web Interface: Streamlit chat UI with timing badges, dark mode support, and session clearing.
+---
 
-## The Process
+## Scope & Target Use Cases
 
-I started by building the document ingestion pipeline. Using PyPDF, text is extracted page by page and split using a recursive text splitter with a chunk size of 1000 characters and 150 overlap. Each chunk stores metadata like file name, chunk index, and page number.
+AskPDF is designed to make working with dense, complex PDFs effortless by enabling users to query documents conversationally. It works seamlessly for **any PDF document**:
 
-Next, I worked on vector indexing and retrieval. I used SentenceTransformers (`all-MiniLM-L6-v2`) to turn text passages into 384-dimensional dense vectors and saved them into a FAISS vector index. I also added a Scikit-Learn TF-IDF fallback to handle environments where vector models might fail.
+* **Students & Researchers** — Quickly extract methodologies, findings, and citations from academic papers.
+* **Professionals & Analysts** — Search technical manuals, financial disclosures, contracts, and specifications.
+* **Engineers & Developers** — Query product documentation, specifications, and architecture papers.
 
-After setup, I integrated the Google Gemini API (`gemini-1.5-flash`). I wrote a system prompt that tells the model to answer strictly using the provided context and cite the exact page numbers used.
+---
 
-To connect everything together, I built a FastAPI backend with `/upload`, `/ask`, and `/health` endpoints with input validation and file path security checks. Then I built the Streamlit frontend with file upload buttons, chat boxes, and expandable source drawers.
+## Key Features
 
-## What I Learned
+* **Universal PDF Upload**: Drag and drop any PDF file. Extracts text, tracks 1-indexed page metadata, and builds overlapping text chunks (1000 characters, 150 overlap).
+* **Dense FAISS Vector Indexing**: Converts text chunks into 384-dimensional dense vectors stored in a FAISS inner-product index for fast context retrieval.
+* **Grounded AI Synthesis**: Uses Google Gemini API with system prompts requiring structured Markdown output grounded strictly in retrieved context.
+* **Transparent Page Citations**: Every response includes expandable source drawers with matching text snippets and exact page numbers.
+* **Interactive UI & Performance Metrics**: Real-time response timing badges, dark mode support, and session history management.
 
-Building this project helped me understand how vector search, prompt constraints, and API design fit together:
+---
 
-### Vector Embeddings and Search
-Creating the FAISS vector index showed me how high-dimensional vectors represent semantic similarity. Normalizing vectors helped compute cosine similarity accurately.
+## How It Works
 
-### Chunking and Metadata Tracking
-Working on PDF processing showed why chunk overlap matters. Keeping overlaps prevents context from getting cut off at chunk boundaries, while tracking page numbers keeps answers verifiable.
+1. **Upload PDF**: User uploads a document via the sidebar interface.
+2. **Text Ingestion & Chunking**: PyPDF extracts text page-by-page and splits it into overlapping passages with page metadata.
+3. **Vector Embedding**: SentenceTransformers (`all-MiniLM-L6-v2`) computes dense vector embeddings and populates the FAISS index.
+4. **Context Retrieval**: On user question, vector search retrieves top-3 context passages (`[Page X]`).
+5. **Grounded Generation**: Gemini API generates a structured, context-grounded answer with source citations.
 
-### Prompting and Context Enforcing
-Writing the prompt template taught me how to keep LLMs focused. Explicitly telling the model to decline answering when information is missing helps avoid made-up responses.
+---
 
-### API Architecture and Containerization
-Building FastAPI routes with Pydantic models gave me practice with request validation, safe file handling, and Docker container setup with Supervisor.
+## Setup & Running Locally
 
-## How can it be improved?
+### 1. Clone & Install Dependencies
 
-* Support asking questions across multiple uploaded PDFs at once.
-* Combine dense FAISS vectors with sparse BM25 search for hybrid retrieval.
-* Add a cross-encoder model to rerank retrieved chunks before sending them to the LLM.
-* Add streaming text output to the Streamlit chat UI.
-* Add OCR support for scanned PDF files.
+```bash
+git clone https://github.com/vidhyawalke/RAG-PDF-Assistant.git
+cd RAG-PDF-Assistant
 
-## Running the Project
+python -m venv venv
+# Windows:
+venv\Scripts\activate
+# Linux/macOS:
+source venv/bin/activate
 
-To run the project on your local machine, follow these steps:
+pip install -r requirements.txt
+```
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/vidhyawalke/RAG-PDF-Assistant.git
-   cd RAG-PDF-Assistant
-   ```
+### 2. Configure Environment Variables
 
-2. Create a virtual environment and install dependencies:
-   ```bash
-   python -m venv venv
-   # On Windows:
-   venv\Scripts\activate
-   # On Linux/macOS:
-   source venv/bin/activate
+Copy `.env.example` to `.env` and set your Google Gemini API key (get a free key from [Google AI Studio](https://aistudio.google.com/)):
 
-   pip install -r requirements.txt
-   ```
+```env
+GOOGLE_API_KEY=your_actual_gemini_api_key
+```
 
-3. Set up environment variables:
-   Copy `.env.example` to `.env` and add your Google Gemini API key:
-   ```bash
-   cp .env.example .env
-   ```
-   Edit `.env`:
-   ```env
-   GOOGLE_API_KEY=your_actual_gemini_api_key
-   ```
+### 3. Launch Application
 
-4. Start the application:
-   * Streamlit Frontend: `streamlit run frontend/app.py --server.port 8000` (open http://localhost:8000)
-   * FastAPI Backend API: `uvicorn backend.main:app --port 8001 --reload` (open http://localhost:8001/docs)
-   * Docker Compose: `docker-compose up --build`
+* **Streamlit Web UI**: `streamlit run frontend/app.py --server.port 8000` (open http://localhost:8000)
+* **FastAPI Backend API**: `uvicorn backend.main:app --port 8001 --reload` (open http://localhost:8001/docs)
+* **Docker Compose**: `docker-compose up --build`
 
-## Video
+---
 
-*(Demo video walkthrough link coming soon)*
+## Deployment Configuration
+
+The application is configured for single-container Docker deployment on platforms like **Render**:
+* **Streamlit UI** listens on dynamic `$PORT` (default `8000`) on `0.0.0.0`.
+* **FastAPI Backend** runs internally on port `8001` on `127.0.0.1`.
+* Managed by **Supervisor** in a `python:3.10-slim` container.

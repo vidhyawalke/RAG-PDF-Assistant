@@ -217,12 +217,13 @@ class RAGPipeline:
         if not api_key or api_key == "your_gemini_api_key_here":
             return ""
 
-        # Use stable and latest Gemini models
+        # Use active Gemini model identifiers
         models_to_try = [
-            "gemini-1.5-flash",
-            "gemini-1.5-flash-8b",
-            "gemini-1.5-pro",
-            "gemini-1.0-pro"
+            "gemini-3.6-flash",
+            "gemini-3.5-flash",
+            "gemini-flash-latest",
+            "gemini-3.1-flash-lite",
+            "gemini-1.5-flash"
         ]
 
         headers = {"Content-Type": "application/json"}
