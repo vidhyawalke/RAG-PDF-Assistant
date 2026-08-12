@@ -1,0 +1,91 @@
+{
+  "summary": {
+    "total_questions": 5,
+    "pass_rate_pct": 100.0,
+    "avg_latency_ms": 4487.93
+  },
+  "results": [
+    {
+      "id": 1,
+      "category": "Role Overview",
+      "question": "What is the primary role of a Junior AI SDE?",
+      "answer": "### Primary Role & Objectives\n\n* **Core Objective:** The main responsibility of a Junior AI SDE is to assist in turning **AI prototypes** into **production-ready software features** [Page 1].\n* **Key Tasks & Responsibilities:**\n  * Write clean, maintainable code in **Python** or other core programming languages [Page 1].\n  * Monitor **model performance** [Page 1].\n  * Debug **integration issues** [Page 1].",
+      "sources_retrieved": 2,
+      "top_page": 1,
+      "latency_ms": 4031.25,
+      "matched_keywords": [
+        "assist",
+        "turning AI prototypes",
+        "production-ready"
+      ],
+      "precision_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "id": 2,
+      "category": "Data Preparation",
+      "question": "What are the core responsibilities in Data Preparation?",
+      "answer": "### **Data Preparation Responsibilities**\n\n* **Dataset Processing**: **Clean**, **transform**, and **manage datasets** essential for software and model workflows [Page 1].\n* **Pipeline Integration**: Prepare and structure data specifically for **training** or **RAG (Retrieval-Augmented Generation) pipelines** [Page 1].",
+      "sources_retrieved": 2,
+      "top_page": 1,
+      "latency_ms": 4236.69,
+      "matched_keywords": [
+        "clean",
+        "transform",
+        "manage datasets",
+        "RAG"
+      ],
+      "precision_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "id": 3,
+      "category": "Model Integration",
+      "question": "Which frameworks and vector databases are mentioned in the ML stack?",
+      "answer": "### **AI/ML Frameworks**\n* The document highlights exposure to frameworks including **PyTorch**, **TensorFlow**, **Scikit-learn**, **LangChain**, and **LlamaIndex** [Page 1].\n\n### **Vector Databases**\n* The vector databases specified for model integration are **ChromaDB** and **FAISS** [Page 1].",
+      "sources_retrieved": 2,
+      "top_page": 1,
+      "latency_ms": 5197.34,
+      "matched_keywords": [
+        "ChromaDB",
+        "FAISS",
+        "LangChain",
+        "PyTorch"
+      ],
+      "precision_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "id": 4,
+      "category": "Testing & Evaluation",
+      "question": "What evaluation metrics should be checked according to the document?",
+      "answer": "### **Model Evaluation Metrics**\n\nAccording to the document, engineers are required to run evaluation scripts to check the following performance metrics:\n\n* **Model Accuracy**: Evaluated to verify the correctness and precision of the model's predictions [Page 1].\n* **Latency**: Measured to monitor and optimize system performance and response speed [Page 1].\n* **Response Quality**: Assessed to ensure the generated outputs meet expected performance standards [Page 1].",
+      "sources_retrieved": 2,
+      "top_page": 1,
+      "latency_ms": 5159.52,
+      "matched_keywords": [
+        "accuracy",
+        "latency",
+        "response quality"
+      ],
+      "precision_score": 100.0,
+      "status": "PASS"
+    },
+    {
+      "id": 5,
+      "category": "Requirements",
+      "question": "What programming languages are required?",
+      "answer": "### **Required Programming Languages**\n\n* **Core Required Languages:** A solid foundation in **Python** and **SQL** is required [Page 1].\n* **Additional/Preferred Languages:** Familiarity with **JavaScript** and **Node.js** is listed as a plus [Page 1].",
+      "sources_retrieved": 2,
+      "top_page": 1,
+      "latency_ms": 3814.86,
+      "matched_keywords": [
+        "Python",
+        "SQL",
+        "JavaScript"
+      ],
+      "precision_score": 100.0,
+      "status": "PASS"
+    }
+  ]
+}

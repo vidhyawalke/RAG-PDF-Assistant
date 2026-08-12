@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  rag-assistant:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    pull_policy: always
+    container_name: rag_pdf_assistant
+    ports:
+      - "8501:8501"
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Use service name for inter-container networking in Docker
+      API_URL: "http://rag-assistant:8000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./vector_store:/app/vector_store
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
