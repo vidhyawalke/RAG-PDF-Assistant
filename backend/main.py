@@ -176,4 +176,4 @@ if __name__ == "__main__":
     import uvicorn
     # Launch Uvicorn Development Server
     # Source: https://www.uvicorn.org/
-    uvicorn.run("backend.main:app", host=settings.HOST, port=settings.PORT, reload=True)
+    uvicorn.run("backend.main:app", host=settings.HOST, port=settings.FASTAPI_PORT, reload=True)

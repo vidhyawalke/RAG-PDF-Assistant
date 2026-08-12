@@ -36,7 +36,8 @@ class Settings:
     """
     GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")
     HOST: str = os.getenv("HOST", "0.0.0.0")
-    PORT: int = int(os.getenv("PORT", "8000"))
+    FASTAPI_PORT: int = int(os.getenv("FASTAPI_PORT", "8000"))
+    PORT: int = int(os.getenv("PORT", "8501"))
     CHUNK_SIZE: int = int(os.getenv("CHUNK_SIZE", "1000"))
     CHUNK_OVERLAP: int = int(os.getenv("CHUNK_OVERLAP", "150"))
     VECTOR_STORE_DIR: str = str(ROOT_DIR / os.getenv("VECTOR_STORE_DIR", "vector_store"))

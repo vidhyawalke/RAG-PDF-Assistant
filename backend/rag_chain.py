@@ -78,21 +78,21 @@ class RAGPipeline:
         try:
             from sentence_transformers import SentenceTransformer
             logger.info("Loading SentenceTransformer model (all-MiniLM-L6-v2)...")
-            # Set timeout to prevent indefinite hangs
             import signal
             
-            def timeout_handler(signum, frame):
-                raise TimeoutError("Model loading timed out after 60 seconds")
-            
-            try:
+            has_alarm = hasattr(signal, "SIGALRM") and hasattr(signal, "alarm")
+            if has_alarm:
+                def timeout_handler(signum, frame):
+                    raise TimeoutError("Model loading timed out after 60 seconds")
                 signal.signal(signal.SIGALRM, timeout_handler)
                 signal.alarm(60)
+            
+            try:
                 self.embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-                signal.alarm(0)
                 logger.info("SentenceTransformer initialized successfully.")
-            except (TimeoutError, Exception) as e:
-                signal.alarm(0)
-                raise e
+            finally:
+                if has_alarm:
+                    signal.alarm(0)
         except Exception as e:
             logger.warning(f"SentenceTransformer unavailable ({e}). Using Scikit-Learn TF-IDF vector engine.")
             from sklearn.feature_extraction.text import TfidfVectorizer

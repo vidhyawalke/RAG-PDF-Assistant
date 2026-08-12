@@ -13,8 +13,8 @@ services:
     env_file:
       - .env
     environment:
-      # Use service name for inter-container networking in Docker
-      API_URL: "http://rag-assistant:8000"
+      # Use loopback address inside container for internal FastAPI communication
+      API_URL: "http://127.0.0.1:8000"
     volumes:
       - ./uploads:/app/uploads
       - ./vector_store:/app/vector_store
