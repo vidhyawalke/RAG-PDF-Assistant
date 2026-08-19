@@ -1,12 +1,5 @@
 """
-================================================================================
-Streamlit Frontend User Interface Module
---------------------------------------------------------------------------------
-References & Documentation Sources:
-- Streamlit Session State & Timeout Management: https://docs.streamlit.io/develop/concepts/architecture/session-state
-- Streamlit Chat Interface API: https://docs.streamlit.io/develop/api-reference/chat
-- Python Requests HTTP Library: https://requests.readthedocs.io/en/latest/
-================================================================================
+Streamlit Frontend User Interface Module.
 """
 
 import os
@@ -21,49 +14,48 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from backend.config import settings
+from src.utils.helpers import settings
+from src.ingestion.loader import PDFLoader
+from src.chunking.chunker import TextChunker
+from src.embeddings.embedder import Embedder
+from src.vectordb.vector_store import VectorStore
+from src.retrieval.retriever import Retriever
+from src.prompts.prompt_templates import format_prompt
+from src.llm.llm_client import LLMClient
 
 # Page Configuration Setup
-# Source: https://docs.streamlit.io/develop/api-reference/configuration/st.set_page_config
 st.set_page_config(
     page_title="RAG PDF Assistant",
-    page_icon="📄",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Use API_URL from settings; for Docker, this should be the service name
 API_URL = settings.API_URL
-SESSION_TIMEOUT_SECONDS = 900  # 15 minutes session timeout
+SESSION_TIMEOUT_SECONDS = 900
 
-# Session State Initialization & Inactivity Timeout Handler
-# Source: https://docs.streamlit.io/develop/concepts/architecture/session-state
-# Initialize session state on first load only
+# Session State Initialization
 if "initialized" not in st.session_state:
     st.session_state["initialized"] = True
     st.session_state["last_activity_time"] = time.time()
     st.session_state["messages"] = [
         {
             "role": "assistant",
-            "content": "Welcome to **RAG PDF Assistant**. Upload a PDF document in the left panel, then type any question below."
+            "content": "Welcome to RAG PDF Assistant. Upload a PDF document in the left panel, then ask any question."
         }
     ]
     st.session_state["document_processed"] = False
     st.session_state["document_name"] = None
     st.session_state["doc_chunks"] = 0
 else:
-    # Check for session timeout only (15 minutes of inactivity)
     current_time = time.time()
     if current_time - st.session_state["last_activity_time"] > SESSION_TIMEOUT_SECONDS:
         st.session_state["messages"] = [
             {
                 "role": "assistant",
-                "content": "Session timed out due to 15 minutes of inactivity. Started a new chat session. Upload a PDF to begin!"
+                "content": "Session timed out due to inactivity. Started a new chat session. Upload a PDF to begin."
             }
         ]
         st.session_state["last_activity_time"] = current_time
-    
-    # Update activity timestamp on each interaction (after timeout check)
     st.session_state["last_activity_time"] = time.time()
 
 if "document_processed" not in st.session_state:
@@ -73,12 +65,11 @@ if "document_name" not in st.session_state:
 if "doc_chunks" not in st.session_state:
     st.session_state["doc_chunks"] = 0
 
-# Sidebar Document Upload & Chat Reset Interface
-# Source: https://docs.streamlit.io/develop/api-reference/widgets/st.file_uploader
+# Sidebar Document Upload
 with st.sidebar:
-    st.header("📄 Document Upload")
-    st.caption("Upload any PDF document from your computer.")
-    
+    st.header("Document Upload")
+    st.caption("Upload a PDF document from your computer.")
+
     uploaded_file = st.file_uploader("Select PDF File", type=["pdf"])
 
     if uploaded_file is not None:
@@ -89,54 +80,53 @@ with st.sidebar:
                     with open(temp_path, "wb") as f:
                         f.write(uploaded_file.getbuffer())
 
-                    # Send to FastAPI backend endpoint with error handling
+                    # Prepare local processing fallback
+                    loader = PDFLoader(validate_paths=False)
+                    chunker = TextChunker()
+                    embedder = Embedder()
+                    vstore = VectorStore()
+
+                    pages = loader.load(temp_path)
+                    chunks = chunker.chunk_pages(pages)
+                    corpus = [c.page_content for c in chunks]
+                    embs = embedder.embed_documents(corpus)
+                    vstore.add_documents(chunks, embs)
+
+                    st.session_state["local_vstore"] = vstore
+                    st.session_state["local_embedder"] = embedder
+
+                    # Send to backend API
                     api_request_success = False
+                    total_chunks = len(chunks)
                     try:
                         with open(temp_path, "rb") as f_upload:
                             res = requests.post(
-                                f"{API_URL}/upload", 
+                                f"{API_URL}/upload",
                                 files={"file": (uploaded_file.name, f_upload, "application/pdf")},
                                 timeout=30
                             )
                         if res.status_code == 200:
                             data = res.json()
-                            st.session_state["document_processed"] = True
-                            st.session_state["document_name"] = uploaded_file.name
-                            st.session_state["doc_chunks"] = data["total_chunks"]
-                            
-                            # Auto-refresh chat history when a NEW document is uploaded
-                            st.session_state["messages"] = [
-                                {
-                                    "role": "assistant",
-                                    "content": f"I have read **{uploaded_file.name}** ({data['total_chunks']} passages indexed). Ask me any question about this document below!"
-                                }
-                            ]
+                            total_chunks = data["total_chunks"]
                             api_request_success = True
-                            st.success("Document processed and chat refreshed.")
-                        else:
-                            st.warning(f"Backend returned status {res.status_code}. Attempting local processing...")
-                    except requests.exceptions.RequestException as req_error:
-                        st.warning(f"Backend unavailable ({req_error}). Attempting local processing...")
-                    
-                    # Fallback to local processing if API call failed
-                    if not api_request_success:
-                        try:
-                            from backend.rag_chain import rag_pipeline
-                            data = rag_pipeline.process_pdf(temp_path)
-                            st.session_state["document_processed"] = True
-                            st.session_state["document_name"] = uploaded_file.name
-                            st.session_state["doc_chunks"] = data["total_chunks"]
-                            
-                            # Auto-refresh chat history when a NEW document is uploaded
-                            st.session_state["messages"] = [
-                                {
-                                    "role": "assistant",
-                                    "content": f"I have read **{uploaded_file.name}** ({data['total_chunks']} passages indexed). Ask me any question about this document below!"
-                                }
-                            ]
-                            st.success("Document processed and chat refreshed (local mode).")
-                        except Exception as local_error:
-                            st.error(f"Both API and local processing failed: {local_error}")
+                    except requests.exceptions.RequestException:
+                        pass
+
+                    st.session_state["document_processed"] = True
+                    st.session_state["document_name"] = uploaded_file.name
+                    st.session_state["doc_chunks"] = total_chunks
+
+                    st.session_state["messages"] = [
+                        {
+                            "role": "assistant",
+                            "content": f"Successfully indexed **{uploaded_file.name}** with {total_chunks} passages. Ask any question below."
+                        }
+                    ]
+
+                    if api_request_success:
+                        st.success("Document processed successfully via backend API.")
+                    else:
+                        st.success("Document processed successfully in local mode.")
 
                 except Exception as e:
                     st.error(f"Failed to process PDF: {e}")
@@ -147,25 +137,23 @@ with st.sidebar:
         st.markdown(f"**Indexed Passages:** `{st.session_state['doc_chunks']} chunks`")
 
     st.divider()
-    
-    # Manual Reset / New Chat Button
-    if st.button("🔄 New Chat / Reset", use_container_width=True):
+
+    if st.button("Reset Chat", use_container_width=True):
         st.session_state["messages"] = [
             {
                 "role": "assistant",
-                "content": "Chat reset. Ask any question about your document!"
+                "content": "Chat reset. Ask any question about your document."
             }
         ]
         st.session_state["last_activity_time"] = time.time()
         st.rerun()
 
-# Main Header Section
+# Main Header
 st.title("RAG PDF Assistant")
-st.caption("Ask any question about your uploaded PDF and get accurate answers with exact page number citations.")
+st.caption("Ask questions about your uploaded PDF and receive grounded answers with exact page citations.")
 
 st.divider()
 
-# Overview Status Cards
 m1, m2, m3 = st.columns(3)
 with m1:
     st.metric(label="Active Document", value=st.session_state["document_name"] or "No PDF Uploaded")
@@ -177,25 +165,22 @@ with m3:
 
 st.divider()
 
-# Render Chat Trajectory
-# Source: https://docs.streamlit.io/develop/api-reference/chat/st.chat_message
+# Render Chat History
 for msg in st.session_state["messages"]:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
         if "sources" in msg and msg["sources"]:
-            with st.expander("📖 View Page Sources"):
+            with st.expander("View Page Sources"):
                 for idx, src in enumerate(msg["sources"], 1):
                     st.markdown(f"**Source Snippet {idx} (Page {src['page']})**")
                     st.info(src["content"])
         if "execution_time_ms" in msg:
-            st.caption(f"⚡ Response Speed: {msg['execution_time_ms']} ms")
+            st.caption(f"Response Speed: {msg['execution_time_ms']} ms")
 
-# Open Chat Input Field (User types any question manually)
-# Source: https://docs.streamlit.io/develop/api-reference/chat/st.chat_input
-if user_input := st.chat_input("Type any question about your document here..."):
-    # Update activity timestamp
+# Chat Input
+if user_input := st.chat_input("Type any question about your document here"):
     st.session_state["last_activity_time"] = time.time()
-    
+
     st.session_state["messages"].append({"role": "user", "content": user_input})
     with st.chat_message("user"):
         st.markdown(user_input)
@@ -204,42 +189,50 @@ if user_input := st.chat_input("Type any question about your document here..."):
         with st.spinner("Searching document context..."):
             try:
                 api_request_success = False
+                answer = ""
+                sources = []
+                latency = 0.0
+
                 try:
-                    res = requests.post(f"{API_URL}/ask", json={"question": user_input, "top_k": 3}, timeout=15)
+                    res = requests.post(f"{API_URL}/ask", json={"question": user_input, "top_k": 3}, timeout=30)
                     if res.status_code == 200:
                         data = res.json()
                         answer = data["answer"]
                         sources = data["sources"]
                         latency = data["execution_time_ms"]
                         api_request_success = True
-                    else:
-                        st.warning(f"Backend error: {res.status_code}. Attempting local processing...")
-                except requests.exceptions.RequestException as req_error:
-                    st.warning(f"Backend unavailable. Attempting local processing...")
+                except requests.exceptions.RequestException:
+                    pass
 
-                # Fallback to local processing if API call failed
                 if not api_request_success:
-                    try:
-                        from backend.rag_chain import rag_pipeline
-                        data = rag_pipeline.answer_question(user_input, top_k=3)
-                        answer = data["answer"]
-                        sources = data["sources"]
-                        latency = data["execution_time_ms"]
-                    except Exception as local_error:
-                        st.error(f"Error processing question: {local_error}")
-                        answer = f"Error: {local_error}"
+                    start_t = time.time()
+                    vstore = st.session_state.get("local_vstore")
+                    embedder = st.session_state.get("local_embedder")
+
+                    if vstore and embedder:
+                        retriever = Retriever(embedder=embedder, vector_store=vstore)
+                        ret_res = retriever.retrieve(user_input, top_k=3)
+                        sources = ret_res["sources"]
+                        prompt = format_prompt(context=ret_res["context"], question=user_input)
+                        llm = LLMClient()
+                        answer = llm.generate(prompt)
+                        if not answer:
+                            answer = llm.generate_fallback_summary(sources)
+                    else:
+                        answer = "Please upload and process a PDF document first."
                         sources = []
-                        latency = 0
+
+                    latency = round((time.time() - start_t) * 1000, 2)
 
                 st.markdown(answer)
 
                 if sources:
-                    with st.expander("📖 View Page Sources"):
+                    with st.expander("View Page Sources"):
                         for idx, src in enumerate(sources, 1):
                             st.markdown(f"**Source Snippet {idx} (Page {src['page']})**")
                             st.info(src["content"])
 
-                st.caption(f"⚡ Response Speed: {latency} ms")
+                st.caption(f"Response Speed: {latency} ms")
 
                 st.session_state["messages"].append({
                     "role": "assistant",
